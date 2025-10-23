@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import { ClientPrincipal, AuthMeResponse } from '../models/auth';
 import { User } from '../models/entities';
 import { getMyProfile } from '../services/apiService';
+import { apiClient } from '../services/apiService'; // <-- MODIFICATION 1: IMPORT apiClient
 
 // --- MOCK DATA FOR LOCAL DEVELOPMENT ---
 const MOCK_INSTRUCTOR_PRINCIPAL: ClientPrincipal = {
@@ -69,8 +70,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const setMockRole = (role: 'INSTRUCTOR' | 'STUDENT') => {
     if (process.env.NODE_ENV === 'development') {
       console.warn(`--- SWITCHING MOCK ROLE TO: ${role} ---`);
-      setClientPrincipal(mockData[role].principal);
-      setCurrentUser(mockData[role].user);
+      const { principal, user } = mockData[role]; // Get the user object
+      setClientPrincipal(principal);
+      setCurrentUser(user);
+      
+      //
+      // --- MODIFICATION 2: THIS IS THE FIX ---
+      // We now set the header directly on the axios instance,
+      // bypassing localStorage entirely.
+      //
+      apiClient.defaults.headers.common['x-mock-email'] = user.email;
     }
   };
 

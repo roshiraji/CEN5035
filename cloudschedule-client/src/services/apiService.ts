@@ -2,12 +2,18 @@ import axios from 'axios';
 import { TimeSlot, Booking, DetailedBooking, User } from '../models/entities';
 
 // Create an axios instance configured for our API
-const apiClient = axios.create({
-  baseURL: '/api', // Azure SWA forwards /api requests to the backend
+// --- CHANGE: Added 'export' to const apiClient ---
+export const apiClient = axios.create({
+  baseURL: '/api', // This will now be proxied to http://localhost:8080
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+//
+// --- WE HAVE REMOVED THE localStorage INTERCEPTOR BLOCK ---
+// The AuthContext will now handle setting the mock header.
+//
 
 /**
  * Fetches available time slots for a specific instructor.
