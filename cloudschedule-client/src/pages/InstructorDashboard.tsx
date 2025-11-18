@@ -3,6 +3,7 @@ import { Container, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { DetailedBooking } from '../models/entities';
 import { getMyBookings } from '../services/apiService';
 import CreateAvailabilityForm from '../components/CreateAvailabilityForm';
+import CreateUserForm from '../components/CreateUserForm';
 import InstructorBookingList from '../components/InstructorBookingList';
 
 const InstructorDashboard: React.FC = () => {
@@ -68,6 +69,9 @@ const InstructorDashboard: React.FC = () => {
         <Col md={6} className="mb-4">
           <h2>Create Availability</h2>
           <CreateAvailabilityForm onAvailabilityCreated={handleAvailabilityCreated} />
+          <div className="mt-4">
+            <CreateUserForm />
+          </div>
         </Col>
         <Col md={6}>
           <h2>Your Booked Appointments</h2>
