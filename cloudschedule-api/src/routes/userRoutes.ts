@@ -45,4 +45,36 @@ router.get('/users/instructors', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @route   POST /api/users
+ * @desc    Create a new user (manual creation). Useful for admin seeding or dev.
+ * @access  Private (protected by authMiddleware) - consider restricting to admins/instructors
+ */
+router.post('/users', async (req: Request, res: Response) => {
+  try {
+    const { email, displayName, role } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        displayName: displayName || email.split('@')[0],
+        role: role || 'STUDENT',
+      },
+    });
+
+    res.status(201).json(newUser);
+  } catch (err: any) {
+    // Handle unique constraint (email already exists)
+    if (err && err.code === 'P2002') {
+      return res.status(409).json({ message: 'User with that email already exists' });
+    }
+    console.error('Error creating user:', err);
+    res.status(500).json({ message: 'Error creating user' });
+  }
+});
+
 export default router;

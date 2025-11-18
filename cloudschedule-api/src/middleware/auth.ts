@@ -18,31 +18,28 @@ interface ClientPrincipal {
 // --- THIS IS THE FIX ---
 // The 'displayName' parameter is now correctly typed as 'string | undefined'
 //
-async function getOrCreateUser(email: string, displayName: string | undefined): Promise<User> {
+async function getOrCreateUser(email: string, displayName?: string, role?: string): Promise<User> {
   if (!email) {
     throw new Error('Email is null or undefined. Cannot get or create user.');
   }
 
-  const existingUser = await prisma.user.findUnique({
+  // Build the update object dynamically so we don't write undefined fields
+  const updateData: Partial<User> = {};
+  if (displayName) updateData.displayName = displayName;
+  if (role) updateData.role = role;
+
+  // Use upsert so that repeated sign-ins will update displayName/role when provided
+  const user = await prisma.user.upsert({
     where: { email },
-  });
-
-  if (existingUser) {
-    return existingUser;
-  }
-
-  // User does not exist. Create them.
-  // Note: We default the role to STUDENT.
-  const newUser = await prisma.user.create({
-    data: {
-      email: email,
-      // This logic already handles an undefined displayName, so the type signature was the only error
-      displayName: displayName || email.split('@')[0], // Use email prefix as default display name
-      role: 'STUDENT', // Default all new signups to STUDENT
+    update: updateData,
+    create: {
+      email,
+      displayName: displayName || email.split('@')[0],
+      role: role || 'STUDENT',
     },
   });
 
-  return newUser;
+  return user;
 }
 
 /**
@@ -70,9 +67,20 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       if (header) {
         const decoded = Buffer.from(header, 'base64').toString('ascii');
         const clientPrincipal: ClientPrincipal = JSON.parse(decoded);
-        
+
         userEmail = clientPrincipal.userDetails;
         userDisplayName = clientPrincipal.userDetails; // Azure Easy Auth often just provides email
+
+        // Map any Easy Auth roles to our internal role. If the incoming roles contain
+        // 'Instructor' (case-insensitive) we'll promote them to INSTRUCTOR in our DB.
+        const incomingRoles = (clientPrincipal.userRoles || []).map(r => r.toLowerCase());
+        if (incomingRoles.includes('instructor') || incomingRoles.includes('instructors')) {
+          // We'll pass this to getOrCreateUser which will upsert the role
+          // to INSTRUCTOR on new user or update existing user if role differs.
+          // Note: we don't allow Easy Auth to set arbitrary roles; we currently
+          // only recognize Instructor.
+          (req as any)._detectedRole = 'INSTRUCTOR';
+        }
       }
     }
 
@@ -83,7 +91,8 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 
     // 4. Get or create the user and attach them to the request object
     // This line (approx. 80) will no longer have an error
-    const user = await getOrCreateUser(userEmail, userDisplayName);
+  const detectedRole = (req as any)._detectedRole as string | undefined;
+  const user = await getOrCreateUser(userEmail, userDisplayName, detectedRole);
     req.user = user;
     
     next();

@@ -76,6 +76,13 @@ export const getInstructors = (): Promise<User[]> => {
 };
 
 /**
+ * Create a new user via the API (admin/dev use)
+ */
+export const createUser = (email: string, displayName?: string, role?: string): Promise<User> => {
+  return apiClient.post('/users', { email, displayName, role }).then(res => res.data);
+};
+
+/**
  * Fetches a .ics calendar file for a specific booking.
  */
 export const getBookingICS = (bookingId: string): Promise<Blob> => {
