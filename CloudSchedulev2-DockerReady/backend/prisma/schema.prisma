@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  INSTRUCTOR
+  STUDENT
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+model User {
+  userId      String    @id @default(uuid())
+  email       String    @unique
+  password    String    // Hashed password
+  displayName String
+  role        UserRole
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  timeSlots   TimeSlot[]
+  bookings    Booking[]
+}
+
+model TimeSlot {
+  slotId       String   @id @default(uuid())
+  instructorId String
+  instructor   User     @relation(fields: [instructorId], references: [userId], onDelete: Cascade)
+  startTime    DateTime
+  endTime      DateTime
+  isBooked     Boolean  @default(false)
+  location     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  booking      Booking?
+
+  @@index([instructorId])
+  @@index([startTime])
+}
+
+model Booking {
+  bookingId      String        @id @default(uuid())
+  slotId         String        @unique
+  slot           TimeSlot      @relation(fields: [slotId], references: [slotId], onDelete: Cascade)
+  studentId      String
+  student        User          @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  startTime      DateTime
+  endTime        DateTime
+  location       String
+  status         BookingStatus @default(PENDING)
+  reason         String?
+  instructorNote String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([studentId])
+  @@index([startTime])
+}
+
