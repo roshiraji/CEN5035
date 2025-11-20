@@ -1,0 +1,5 @@
+{
+  "name": "CloudSchedule",
+  "description": "A comprehensive office hours booking system connecting students and instructors with real-time slot management and calendar integration.",
+  "requestFramePermissions": []
+}
