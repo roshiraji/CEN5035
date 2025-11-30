@@ -31,6 +31,17 @@ async function main() {
     }
   });
 
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin' },
+    update: {},
+    create: {
+      email: 'admin',
+      password: await bcrypt.hash('admin', 10),
+      displayName: 'System Admin',
+      role: 'ADMIN'
+    }
+  });
+
   console.log('Seeded users:', { instructor: instructor.email, student: student.email });
 }
 

@@ -13,6 +13,7 @@ datasource db {
 enum UserRole {
   INSTRUCTOR
   STUDENT
+  ADMIN
 }
 
 enum BookingStatus {

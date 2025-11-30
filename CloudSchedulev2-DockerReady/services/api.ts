@@ -109,3 +109,22 @@ export const cancelBooking = async (bookingId: string): Promise<void> => {
     method: 'DELETE',
   });
 };
+
+// --- ADMIN SERVICES ---
+
+export const getAllUsers = async (): Promise<User[]> => {
+  return apiRequest<User[]>('/admin');
+};
+
+export const deleteUser = async (userId: string): Promise<void> => {
+  await apiRequest(`/admin/${userId}`, {
+    method: 'DELETE',
+  });
+};
+
+export const resetUserPassword = async (userId: string, password: string): Promise<void> => {
+  await apiRequest(`/admin/${userId}/reset-password`, {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+  });
+};
